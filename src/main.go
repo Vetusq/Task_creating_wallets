@@ -24,10 +24,10 @@ var hardKey = []byte("my_key_watercrh7")
 func main() {
 	if _, err := os.Stat(passwordFile); os.IsNotExist(err) {
 		fmt.Println("No password found... Creating a new one...")
-		createPassword()
+		createPass()
 	} else {
 		fmt.Print("Insert your password: ")
-		password, err := readPassword()
+		password, err := readPass()
 		if err != nil {
 			log.Fatal("Error reading password:", err)
 		}
@@ -40,15 +40,15 @@ func main() {
 	}
 }
 
-func createPassword() {
+func createPass() {
 
 	fmt.Print("Insert password: ")
-	password, err := readPassword()
+	password, err := readPass()
 	if err != nil {
 		log.Fatal("Error reading pass:", err)
 	}
 
-	hashedPassword := hashPassword(password)
+	hashedPassword := hashPass(password)
 
 	err = cryptPass([]byte(hashedPassword))
 	if err != nil {
@@ -58,7 +58,7 @@ func createPassword() {
 	fmt.Println("Pass sucessfully created and saved")
 }
 
-func hashPassword(password string) string {
+func hashPass(password string) string {
 	hash := sha256.Sum256([]byte(password))
 	return hex.EncodeToString(hash[:])
 }
@@ -97,26 +97,27 @@ func cryptPass(hashedInputPassword []byte) error {
 func comparePassword(inputPassword string) bool {
 	encryptedPassword, err := os.ReadFile(passwordFile)
 	if err != nil {
-		log.Fatal("Error reading encrypted password:", err)
+		log.Fatal("Error reading crypted password:", err)
 	}
 
 	iv := encryptedPassword[:aes.BlockSize]
 	password := encryptedPassword[aes.BlockSize:]
 
-	hashedInputPassword := hashPassword(inputPassword)
+	hashedInputPassword := hashPass(inputPassword)
 
 	block, err := aes.NewCipher(hardKey)
 	if err != nil {
-		log.Fatal("Error creating cipher:", err)
+		log.Fatal("Error:", err)
 	}
 
 	stream := cipher.NewCFBDecrypter(block, iv)
+
 	stream.XORKeyStream(password, password)
 
 	return string(password) == string(hashedInputPassword)
 }
 
-func readPassword() (string, error) {
+func readPass() (string, error) {
 	password, err := term.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
 		return "", err
